@@ -1,3 +1,4 @@
+import difflib
 import functools
 import hashlib
 import os
@@ -209,6 +210,23 @@ def file_md5sum(filepath: Path, block_size=64 * 1024) -> str:
         for block in iter(lambda: file_handler.read(block_size), b''):
             hasher.update(block)
     return hasher.hexdigest()
+
+
+def file_diff(first_filepath: Path, second_filepath: Path) -> str:
+    """
+    Generates a diff between two files.
+    :param first_filepath: a pathlib. Path to the first file
+    :param second_filepath: a pathlib. Path to the second file
+    :return: a unified diff of the two files.
+    """
+    with first_filepath.open('rb') as first_file_handler:
+        first_lines = first_file_handler.readlines()
+    with second_filepath.open('rb') as second_file_handler:
+        second_lines = second_file_handler.readlines()
+
+    diff_lines = difflib.diff_bytes(difflib.unified_diff, first_lines, second_lines)
+
+    return b''.join(diff_lines)
 
 
 def decode_unaligned(data: bytes, encoding: Optional[str] = None):

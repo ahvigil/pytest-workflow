@@ -22,7 +22,7 @@ import pytest
 
 from .content_tests import ContentTestCollector
 from .schema import FileTest
-from .util import file_md5sum
+from .util import file_diff, file_md5sum
 from .workflow import Workflow
 
 
@@ -147,4 +147,36 @@ class FileMd5(pytest.Item):
         return (
             f"Observed md5sum '{self.observed_md5sum}' not equal to expected "
             f"md5sum '{self.expected_md5sum}' for file '{self.filepath}'"
+        )
+
+
+class FileDiff(pytest.Item):
+    def __init__(self, parent: pytest.Collector, filepath: Path,
+                 expected_path: str, workflow: Workflow):
+        """
+        Create a tests for the file diff.
+        :param parent: The collector that started this item
+        :param filepath: The path to the file
+        :param expected_path: The path to diff filepath against
+        :param workflow: The workflow running to generate the file
+        """
+        name = "diff"
+        super().__init__(name, parent)
+        self.filepath = filepath
+        self.expected_path = expected_path
+        self.workflow = workflow
+
+    def runtest(self):
+        # Wait for the workflow to finish before we check the md5sum of a file.
+        self.workflow.wait()
+        if not self.workflow.matching_exitcode():
+            pytest.skip(f"'{self.parent.workflow.name}' did not exit with"
+                        f"desired exit code.")
+        self.observed_diff = file_diff(self.expected_path, self.filepath)
+        assert not self.observed_diff
+
+    def repr_failure(self, excinfo, style=None):
+        return (
+            f"File '{self.filepath}' differs from '{self.expected_path}':"
+            f":\n{self.observed_diff}"
         )

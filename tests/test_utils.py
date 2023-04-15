@@ -25,7 +25,7 @@ from pathlib import Path
 import pytest
 
 from pytest_workflow.util import decode_unaligned, duplicate_tree, \
-    file_md5sum, git_check_submodules_cloned, git_root, \
+    file_md5sum, file_diff, git_check_submodules_cloned, git_root, \
     is_in_dir, link_tree, replace_whitespace
 
 WHITESPACE_TESTS = [
@@ -161,6 +161,11 @@ def test_file_md5sum(hash_file: Path):
     whole_file_md5 = hashlib.md5(hash_file.read_bytes()).hexdigest()
     per_line_md5 = file_md5sum(hash_file)
     assert whole_file_md5 == per_line_md5
+
+
+@pytest.mark.parametrize("diff_file", HASH_FILE_DIR.iterdir())
+def test_file_md5sum(diff_file: Path):
+    assert not file_diff(diff_file, diff_file)
 
 
 def create_git_repo(path):
